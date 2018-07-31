@@ -418,10 +418,8 @@ public:
 
     /** Method deletes all views of document for the node. The content-
         frames are removed from the respective layout.
-
-        Add an input param to identify if acc table should be disposed
     */
-    void DelFrames( bool bIsAccTableDispose = true );
+    void DelFrames(SwRootFrame const* pLayout);
 
     /** @return count of elements of node content. Default is 1.
        There are differences between text node and formula node. */
@@ -513,7 +511,7 @@ public:
 
     /** Method deletes all views of document for the node.
        The content frames are removed from the respective layout. */
-    void DelFrames();
+    void DelFrames(SwRootFrame const* pLayout = nullptr);
 
     /** Method creates all views of the document for the previous node.
        The content frames that are created are put into the respective layout. */
@@ -561,7 +559,7 @@ public:
 
     /** Method deletes all views of document for the node. The
      content frames are removed from the respective layout. */
-    void DelFrames();
+    void DelFrames(SwRootFrame const* pLayout = nullptr);
 
     /** Method creates all views of document for the previous node.
        The content frames created are put into the respective layout. */
