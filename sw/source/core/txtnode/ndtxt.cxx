@@ -427,6 +427,7 @@ void MoveMergedFlysAndFootnotes(std::vector<SwTextFrame*> const& rFrames,
 SwTextNode *SwTextNode::SplitContentNode(const SwPosition & rPos,
         std::function<void (SwTextNode *, sw::mark::RestoreMode)> const*const pContentIndexRestore)
 {
+    bool isHide(false);
     SwNode::Merge const eOldMergeFlag(GetRedlineMergeFlag());
     bool parentIsOutline = IsOutline();
 
@@ -551,6 +552,10 @@ SwTextNode *SwTextNode::SplitContentNode(const SwPosition & rPos,
         for (SwTextFrame* pFrame = aIter.First(); pFrame; pFrame = aIter.Next())
         {
             frames.push_back(pFrame);
+            if (pFrame->getRootFrame()->IsHideRedlines())
+            {
+                isHide = true;
+            }
         }
         for (SwTextFrame * pFrame : frames)
         {
@@ -669,6 +674,10 @@ SwTextNode *SwTextNode::SplitContentNode(const SwPosition & rPos,
         for (SwTextFrame * pFrame = aIter.First(); pFrame; pFrame = aIter.Next())
         {
             frames.push_back(pFrame);
+            if (pFrame->getRootFrame()->IsHideRedlines())
+            {
+                isHide = true;
+            }
         }
         bool bNonMerged(false);
         bool bRecreateThis(false);
@@ -726,6 +735,7 @@ SwTextNode *SwTextNode::SplitContentNode(const SwPosition & rPos,
         }
     }
 
+    if (isHide) // otherwise flags won't be set anyway
     {
         // First
         // -> First,NonFirst
