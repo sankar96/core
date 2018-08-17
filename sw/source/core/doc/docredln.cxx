@@ -1162,7 +1162,7 @@ void SwRangeRedline::Show(sal_uInt16 nLoop, size_t nMyPos)
 
         case nsRedlineType_t::REDLINE_FORMAT:           // Attributes have been applied
         case nsRedlineType_t::REDLINE_TABLE:            // Table structure has been modified
-            InvalidateRange();
+            InvalidateRange(Invalidation::Add);
             break;
         default:
             break;
@@ -1199,7 +1199,7 @@ void SwRangeRedline::Hide(sal_uInt16 nLoop, size_t nMyPos)
     case nsRedlineType_t::REDLINE_FORMAT:           // Attributes have been applied
     case nsRedlineType_t::REDLINE_TABLE:            // Table structure has been modified
         if( 1 <= nLoop )
-            InvalidateRange();
+            InvalidateRange(Invalidation::Remove);
         break;
     default:
         break;
@@ -1241,7 +1241,7 @@ void SwRangeRedline::ShowOriginal(sal_uInt16 nLoop, size_t nMyPos)
     case nsRedlineType_t::REDLINE_FORMAT:           // Attributes have been applied
     case nsRedlineType_t::REDLINE_TABLE:            // Table structure has been modified
         if( 1 <= nLoop )
-            InvalidateRange();
+            InvalidateRange(Invalidation::Remove);
         break;
     default:
         break;
@@ -1249,7 +1249,8 @@ void SwRangeRedline::ShowOriginal(sal_uInt16 nLoop, size_t nMyPos)
     pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 }
 
-void SwRangeRedline::InvalidateRange()       // trigger the Layout
+// trigger the Layout
+void SwRangeRedline::InvalidateRange(Invalidation const eWhy)
 {
     sal_uLong nSttNd = GetMark()->nNode.GetIndex(),
             nEndNd = GetPoint()->nNode.GetIndex();
@@ -1282,9 +1283,17 @@ void SwRangeRedline::InvalidateRange()       // trigger the Layout
             if (GetType() == nsRedlineType_t::REDLINE_DELETE)
             {
                 sal_Int32 const nStart(n == nSttNd ? nSttCnt : 0);
-                sw::RedlineDelText const hint(nStart,
-                    (n == nEndNd ? nEndCnt : pNd->GetText().getLength()) - nStart);
-                pNd->CallSwClientNotify(hint);
+                sal_Int32 const nLen((n == nEndNd ? nEndCnt : pNd->GetText().getLength()) - nStart);
+                if (eWhy == Invalidation::Add)
+                {
+                    sw::RedlineDelText const hint(nStart, nLen);
+                    pNd->CallSwClientNotify(hint);
+                }
+                else
+                {
+                    sw::RedlineUnDelText const hint(nStart, nLen);
+                    pNd->CallSwClientNotify(hint);
+                }
             }
         }
     }
@@ -1396,7 +1405,7 @@ void SwRangeRedline::MoveToSection()
         DeleteMark();
     }
     else
-        InvalidateRange();
+        InvalidateRange(Invalidation::Remove);
 }
 
 void SwRangeRedline::CopyToSection()
@@ -1676,7 +1685,7 @@ void SwRangeRedline::MoveFromSection(size_t nMyPos)
             *pItem = *End();
     }
     else
-        InvalidateRange();
+        InvalidateRange(Invalidation::Add);
 }
 
 // for Undo
