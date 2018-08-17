@@ -2821,6 +2821,8 @@ SwContentFrame* SwFootnoteFrame::GetRef()
     SAL_WARN_IF( mpReference != pRefAttr && !mpReference->IsAnFollow( pRefAttr )
             && !pRefAttr->IsAnFollow( mpReference ),
             "sw.core", "access to deleted Frame? pRef != pAttr->GetRef()" );
+    assert(mpReference == pRefAttr || mpReference->IsAnFollow(pRefAttr)
+            || pRefAttr->IsAnFollow(mpReference));
     return mpReference;
 }
 #endif
