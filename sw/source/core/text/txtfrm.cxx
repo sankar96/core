@@ -727,10 +727,14 @@ TextFrameIndex UpdateMergedParaForInsert(MergedPara & rMerged,
         bool const isRealInsert,
         SwTextNode const& rNode, sal_Int32 const nIndex, sal_Int32 const nLen)
 {
-    assert(nLen); // can 0 happen?
+    assert(!isRealInsert || nLen); // can 0 happen? yes, for redline in empty node
     assert(nIndex <= rNode.Len());
     assert(nIndex + nLen <= rNode.Len());
     assert(rMerged.pFirstNode->GetIndex() <= rNode.GetIndex() && rNode.GetIndex() <= rMerged.pLastNode->GetIndex());
+    if (!nLen)
+    {
+        return TextFrameIndex(0);
+    }
     OUStringBuffer text(rMerged.mergedText);
     sal_Int32 nTFIndex(0);
     sal_Int32 nInserted(0);
