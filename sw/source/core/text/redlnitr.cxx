@@ -78,6 +78,7 @@ CheckParaRedlineMerge(SwTextFrame & rFrame, SwTextNode & rTextNode,
         SwPosition const*const pEnd(pRed->End());
         assert(*pStart != *pEnd); // empty delete allowed if shown ???
         bHaveRedlines = true;
+        assert(pNode != &rTextNode || &pStart->nNode.GetNode() == &rTextNode); // detect calls with wrong start node
         if (pStart->nContent != nLastEnd) // not 0 so we eliminate adjacent deletes
         {
             extents.emplace_back(pNode, nLastEnd, pStart->nContent.GetIndex());
