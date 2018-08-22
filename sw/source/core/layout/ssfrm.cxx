@@ -440,14 +440,19 @@ SwContentFrame::~SwContentFrame()
 {
 }
 
-void SwTextFrame::RegisterToNode(SwTextNode & rNode)
+void SwTextFrame::RegisterToNode(SwTextNode & rNode, bool const isForceNodeAsFirst)
 {
+    if (isForceNodeAsFirst && m_pMergedPara)
+    {   // nothing registered here, in particular no redlines
+        assert(m_pMergedPara->pFirstNode->GetIndex() + 1 == rNode.GetIndex());
+        assert(!m_pMergedPara->pFirstNode->HasAnyIndex());
+    }
     assert(&rNode != GetDep());
     assert(!m_pMergedPara
         || (m_pMergedPara->pFirstNode->GetIndex() < rNode.GetIndex())
         || (rNode.GetIndex() + 1 == m_pMergedPara->pFirstNode->GetIndex()));
     SwTextNode & rFirstNode(
-        (m_pMergedPara && m_pMergedPara->pFirstNode->GetIndex() < rNode.GetIndex())
+        (!isForceNodeAsFirst && m_pMergedPara && m_pMergedPara->pFirstNode->GetIndex() < rNode.GetIndex())
             ? *m_pMergedPara->pFirstNode
             : rNode);
     // sw_redlinehide: use New here, because the only caller also calls lcl_ChangeFootnoteRef
