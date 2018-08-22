@@ -4348,8 +4348,9 @@ static void UnHideRedlines(SwRootFrame & rLayout,
             {
                 if (rNode.IsContentNode())
                 {
-                    // note: no-op for NonFirst nodes, only Hidden will delete
-                    static_cast<SwContentNode&>(rNode).DelFrames(&rLayout);
+                    // note: nothing to do here, already done
+                    auto const pFrame(static_cast<SwContentNode&>(rNode).getLayoutFrame(&rLayout));
+                    assert(!pFrame || static_cast<SwTextFrame*>(pFrame)->GetMergedPara()->pFirstNode != &rNode);
                 }
                 else if (rNode.IsTableNode())
                 {
