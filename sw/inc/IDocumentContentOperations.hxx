@@ -22,6 +22,7 @@
 
 #include <sal/types.h>
 #include <rtl/ustring.hxx>
+#include <functional>
 #include "swtypes.hxx"
 
 class SwPaM;
@@ -37,6 +38,9 @@ class SwFrameFormat;
 class SwDrawFrameFormat;
 class SwFlyFrameFormat;
 class SwNodeIndex;
+class SwTextNode;
+
+namespace sw { namespace mark { enum class RestoreMode; } }
 
 namespace utl { class TransliterationWrapper; }
 namespace svt { class EmbeddedObjectRef; }
@@ -186,7 +190,8 @@ public:
 
     /** Split a node at rPos (implemented only for TextNode).
     */
-    virtual bool SplitNode(const SwPosition &rPos, bool bChkTableStart) = 0;
+    virtual bool SplitNode(const SwPosition &rPos, bool bChkTableStart,
+        std::function<void ()> const* pRedlineRestore = nullptr) = 0;
 
     virtual bool AppendTextNode(SwPosition& rPos) = 0;
 

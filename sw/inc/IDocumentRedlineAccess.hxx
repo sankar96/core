@@ -180,7 +180,7 @@ public:
     virtual bool DeleteRedline(
         /*[in]*/const SwPaM& rPam,
         /*[in]*/bool bSaveInUndo,
-        /*[in]*/sal_uInt16 nDelType) = 0;
+        /*[in]*/sal_uInt16 nDelType, bool bIgnoreJoining = false) = 0;
 
     virtual bool DeleteRedline(
         /*[in]*/const SwStartNode& rSection,

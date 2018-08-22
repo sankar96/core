@@ -78,7 +78,8 @@ public:
     SwFlyFrameFormat* InsertOLE(const SwPaM &rRg, const OUString& rObjName, sal_Int64 nAspect, const SfxItemSet* pFlyAttrSet,
                            const SfxItemSet* pGrfAttrSet) override;
 
-    bool SplitNode(const SwPosition &rPos, bool bChkTableStart) override;
+    bool SplitNode(const SwPosition &rPos, bool bChkTableStart,
+        std::function<void ()> const* pRedlineRestore = nullptr) override;
 
     bool AppendTextNode(SwPosition& rPos) override;
 

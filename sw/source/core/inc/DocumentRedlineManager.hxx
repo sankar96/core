@@ -61,7 +61,7 @@ public:
     virtual bool DeleteRedline(
         /*[in]*/const SwPaM& rPam,
         /*[in]*/bool bSaveInUndo,
-        /*[in]*/sal_uInt16 nDelType) override;
+        /*[in]*/sal_uInt16 nDelType, bool bIgnoreJoining = false) override;
 
     virtual bool DeleteRedline(
         /*[in]*/const SwStartNode& rSection,

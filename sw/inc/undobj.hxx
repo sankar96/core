@@ -119,9 +119,11 @@ public:
 
     bool IsDelBox() const;
 
+    enum class DelRange { Ignore, Delete, DeleteNonJoining };
     // Save and set Redline data.
     static bool FillSaveData( const SwPaM& rRange, SwRedlineSaveDatas& rSData,
-                              bool bDelRange = true, bool bCopyNext = true );
+                              DelRange eDelRange = DelRange::Delete,
+                              bool bCopyNext = true );
     static bool FillSaveDataForFormat( const SwPaM& , SwRedlineSaveDatas& );
     static void SetSaveData( SwDoc& rDoc, SwRedlineSaveDatas& rSData );
     static bool HasHiddenRedlines( const SwRedlineSaveDatas& rSData );
