@@ -88,7 +88,7 @@ SwUndoInsSection::SwUndoInsSection(
         SetRedlineFlags( rDoc.getIDocumentRedlineAccess().GetRedlineFlags() );
     }
         m_pRedlineSaveData.reset( new SwRedlineSaveDatas );
-        if (!FillSaveData( rPam, *m_pRedlineSaveData, SwUndo::DelRange::Ignore))
+        if( !FillSaveData( rPam, *m_pRedlineSaveData, false ))
             m_pRedlineSaveData.reset( nullptr );
 
     if( !rPam.HasMark() )

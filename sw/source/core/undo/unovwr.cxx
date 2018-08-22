@@ -48,7 +48,7 @@ SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
         SwPaM aPam( rPos.nNode, rPos.nContent.GetIndex(),
                     rPos.nNode, rPos.nContent.GetIndex()+1 );
         pRedlSaveData.reset( new SwRedlineSaveDatas );
-        if (!FillSaveData( aPam, *pRedlSaveData, SwUndo::DelRange::Ignore))
+        if( !FillSaveData( aPam, *pRedlSaveData, false ))
         {
             pRedlSaveData.reset();
         }
@@ -125,7 +125,7 @@ bool SwUndoOverwrite::CanGrouping( SwDoc* pDoc, SwPosition& rPos,
         SwPaM aPam( rPos.nNode, rPos.nContent.GetIndex(),
                     rPos.nNode, rPos.nContent.GetIndex()+1 );
 
-        const bool bSaved = FillSaveData(aPam, aTmpSav, SwUndo::DelRange::Ignore);
+        const bool bSaved = FillSaveData( aPam, aTmpSav, false );
 
         bool bOk = ( !pRedlSaveData && !bSaved ) ||
                    ( pRedlSaveData && bSaved &&

@@ -1378,7 +1378,7 @@ void SwRedlineSaveData::RedlineToDoc( SwPaM const & rPam )
 bool SwUndo::FillSaveData(
     const SwPaM& rRange,
     SwRedlineSaveDatas& rSData,
-    DelRange const eDelRange,
+    bool bDelRange,
     bool bCopyNext )
 {
     rSData.clear();
@@ -1403,10 +1403,9 @@ bool SwUndo::FillSaveData(
             rSData.push_back(std::unique_ptr<SwRedlineSaveData, o3tl::default_delete<SwRedlineSaveData>>(new SwRedlineSaveData(eCmpPos, *pStt, *pEnd, *pRedl, bCopyNext)));
         }
     }
-    if (!rSData.empty() && eDelRange != DelRange::Ignore)
+    if( !rSData.empty() && bDelRange )
     {
-        rRange.GetDoc()->getIDocumentRedlineAccess().DeleteRedline(
-            rRange, false, USHRT_MAX, eDelRange == DelRange::DeleteNonJoining);
+        rRange.GetDoc()->getIDocumentRedlineAccess().DeleteRedline( rRange, false, USHRT_MAX );
     }
     return !rSData.empty();
 }

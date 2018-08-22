@@ -1923,7 +1923,7 @@ bool DocumentRedlineManager::SplitRedline( const SwPaM& rRange )
 }
 
 bool DocumentRedlineManager::DeleteRedline( const SwPaM& rRange, bool bSaveInUndo,
-        sal_uInt16 const nDelType, bool const bIgnoreJoining)
+                            sal_uInt16 nDelType )
 {
     if( RedlineFlags::IgnoreDeleteRedlines & meRedlineFlags ||
         !rRange.HasMark() || *rRange.GetMark() == *rRange.GetPoint() )
@@ -1956,13 +1956,6 @@ bool DocumentRedlineManager::DeleteRedline( const SwPaM& rRange, bool bSaveInUnd
         SwPosition* pRStt = pRedl->Start(),
                   * pREnd = pRStt == pRedl->GetPoint() ? pRedl->GetMark()
                                                        : pRedl->GetPoint();
-        if (bIgnoreJoining && pRStt->nNode != pREnd->nNode
-            && pRStt->nNode.GetIndex() <= pStt->nNode.GetIndex()
-            && pEnd->nNode.GetIndex() <= pREnd->nNode.GetIndex())
-        {
-            continue; // ignore node-joining redline
-        }
-
         switch( ComparePosition( *pStt, *pEnd, *pRStt, *pREnd ) )
         {
         case SwComparePosition::Equal:

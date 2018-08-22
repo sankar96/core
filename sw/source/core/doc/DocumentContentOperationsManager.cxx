@@ -2831,8 +2831,7 @@ SwDrawFrameFormat* DocumentContentOperationsManager::InsertDrawObj(
     return pFormat;
 }
 
-bool DocumentContentOperationsManager::SplitNode( const SwPosition &rPos, bool bChkTableStart,
-        std::function<void ()> const*const pRedlineRestore)
+bool DocumentContentOperationsManager::SplitNode( const SwPosition &rPos, bool bChkTableStart )
 {
     SwContentNode *pNode = rPos.nNode.GetNode().GetContentNode();
     if(nullptr == pNode)
@@ -2965,10 +2964,6 @@ bool DocumentContentOperationsManager::SplitNode( const SwPosition &rPos, bool b
                     {
                         m_rDoc.getIDocumentRedlineAccess().SplitRedline(aPam);
                     }
-                }
-                if (pRedlineRestore)
-                {
-                    (*pRedlineRestore)();
                 }
             }
         });

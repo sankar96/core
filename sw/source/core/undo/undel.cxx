@@ -32,8 +32,6 @@
 #include <swundo.hxx>
 #include <pam.hxx>
 #include <ndtxt.hxx>
-#include <txtfrm.hxx>
-#include <rootfrm.hxx>
 #include <UndoCore.hxx>
 #include <rolbck.hxx>
 #include <poolfmt.hxx>
@@ -121,15 +119,11 @@ SwUndoDelete::SwUndoDelete(
     bCacheComment = false;
 
     SwDoc * pDoc = rPam.GetDoc();
-    bool bMustDelete(false);
 
     if( !pDoc->getIDocumentRedlineAccess().IsIgnoreRedline() && !pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty() )
     {
         m_pRedlSaveData.reset(new SwRedlineSaveDatas);
-//        if (!FillSaveData(rPam, *m_pRedlSaveData, false /*true in 2nd call*/))
-        bMustDelete = rPam.GetPoint()->nNode != rPam.GetMark()->nNode;
-//        if (!FillSaveData(rPam, *m_pRedlSaveData, rPam.GetPoint()->nNode == rPam.GetMark()->nNode))
-        if (!FillSaveData(rPam, *m_pRedlSaveData, SwUndo::DelRange::DeleteNonJoining))
+        if( !FillSaveData( rPam, *m_pRedlSaveData ))
         {
             m_pRedlSaveData.reset();
         }
@@ -216,7 +210,7 @@ SwUndoDelete::SwUndoDelete(
 
     if( !pSttTextNd && !pEndTextNd )
         --rPam.GetPoint()->nNode;
-//    rPam.DeleteMark();          // the SPoint is in the selection
+    rPam.DeleteMark();          // the SPoint is in the selection
 
     if( !pEndTextNd )
         nEndContent = 0;
@@ -360,22 +354,6 @@ SwUndoDelete::SwUndoDelete(
     // is a history necessary here at all?
     if( pHistory && !pHistory->Count() )
         pHistory.reset();
-
-    assert(pDoc->getIDocumentRedlineAccess().IsIgnoreRedline()
-        || pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty()
-        || (pStt->nNode != pEnd->nNode) == bMustDelete);
-    if (pStt->nNode != pEnd->nNode
-        && !pDoc->getIDocumentRedlineAccess().IsIgnoreRedline()
-        && !pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty())
-    {   // horrible duplication that SplitNode can undo
-        m_pRedlSaveDataAtEnd.reset(new SwRedlineSaveDatas);
-        if (!FillSaveData(rPam, *m_pRedlSaveDataAtEnd))
-        {
-            m_pRedlSaveDataAtEnd.reset();
-        }
-    }
-
-    rPam.DeleteMark(); // now it is no longer a range...
 }
 
 bool SwUndoDelete::SaveContent( const SwPosition* pStt, const SwPosition* pEnd,
@@ -506,7 +484,7 @@ bool SwUndoDelete::CanGrouping( SwDoc* pDoc, const SwPaM& rDelPam )
 
     {
         SwRedlineSaveDatas aTmpSav;
-        const bool bSaved = FillSaveData(rDelPam, aTmpSav, SwUndo::DelRange::Ignore);
+        const bool bSaved = FillSaveData( rDelPam, aTmpSav, false );
 
         bool bOk = ( !m_pRedlSaveData && !bSaved ) ||
                    ( m_pRedlSaveData && bSaved &&
@@ -810,7 +788,6 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
             pInsNd = nullptr;         // do not delete Node!
 
         bool bNodeMove = 0 != m_nNode;
-        bool bRedlAtEndRestored(false);
 
         if( m_aEndStr )
         {
@@ -826,17 +803,7 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
             if( m_aSttStr && !m_bFromTableCopy )
             {
                 sal_uLong nOldIdx = aPos.nNode.GetIndex();
-                // call this before messing with frames in SplitNode
-                std::function<void ()> restoreFunc(
-                    [&]()
-                    {
-                        if (m_pRedlSaveDataAtEnd)
-                        {
-                            SetSaveData(rDoc, *m_pRedlSaveDataAtEnd);
-                        }
-                    });
-                rDoc.getIDocumentContentOperations().SplitNode(aPos, false, &restoreFunc);
-                bRedlAtEndRestored = true;
+                rDoc.getIDocumentContentOperations().SplitNode( aPos, false );
                 // After the split all objects are anchored at the first
                 // paragraph, but the pHistory of the fly frame formats relies
                 // on anchoring at the start of the selection
@@ -844,11 +811,6 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
                 if( m_bBackSp )
                     lcl_ReAnchorAtContentFlyFrames(*rDoc.GetSpzFrameFormats(), aPos, nOldIdx);
                 pTextNd = aPos.nNode.GetNode().GetTextNode();
-            }
-            else if (m_pRedlSaveDataAtEnd)
-            {
-                SetSaveData(rDoc, *m_pRedlSaveDataAtEnd);
-                bRedlAtEndRestored = true;
             }
             if( pTextNd )
             {
@@ -868,29 +830,13 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
                 if (nSttContent < pNd->GetText().getLength())
                 {
                     sal_uLong nOldIdx = aPos.nNode.GetIndex();
-                    // call this before messing with frames in SplitNode
-                    std::function<void ()> restoreFunc(
-                        [&]()
-                        {
-                            if (m_pRedlSaveDataAtEnd)
-                            {
-                                SetSaveData(rDoc, *m_pRedlSaveDataAtEnd);
-                            }
-                        });
-                    rDoc.getIDocumentContentOperations().SplitNode(aPos, false, &restoreFunc);
-                    bRedlAtEndRestored = true;
+                    rDoc.getIDocumentContentOperations().SplitNode( aPos, false );
                     if( m_bBackSp )
                         lcl_ReAnchorAtContentFlyFrames(*rDoc.GetSpzFrameFormats(), aPos, nOldIdx);
                 }
                 else
-                {
                     ++aPos.nNode;
-                }
             }
-        }
-        if (!bRedlAtEndRestored && m_pRedlSaveDataAtEnd)
-        {
-            SetSaveData(rDoc, *m_pRedlSaveDataAtEnd);
         }
         SwNode* pMovedNode = nullptr;
         if( m_nSectDiff )
@@ -920,23 +866,7 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
         {
             SwNodeRange aRange( *m_pMvStt, 0, *m_pMvStt, m_nNode );
             SwNodeIndex aCopyIndex( aPos.nNode, -1 );
-            rDoc.GetUndoManager().GetUndoNodes().Copy_(aRange, aPos.nNode,
-                    // SplitNode would have inited this flag; at this point,
-                    // either all these nodes are Hidden or all are None
-                    // (it might be that in the None case, the 2nd SetSaveData
-                    //  below will introduce new redlines...)
-                    false);
-#if 0
-                    aPos.nNode.GetRedlineMergeFlag() == SwNode::Merge::None);
-#endif
-            if (aPos.nNode.GetNode().GetRedlineMergeFlag() != SwNode::Merge::None)
-            {
-                for (sal_uLong i = aCopyIndex.GetIndex() + m_nNode; aCopyIndex.GetIndex() < i; --i)
-                {
-                    rDoc.GetNodes()[i]->SetRedlineMergeFlag(SwNode::Merge::Hidden);
-                }
-            }
-            // TODO after the SetSaveData we need to check again ???
+            rDoc.GetUndoManager().GetUndoNodes().Copy_( aRange, aPos.nNode );
 
             if( m_nReplaceDummy )
             {
@@ -1026,61 +956,7 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
     if( pInsNd )
         rDoc.GetNodes().Delete( aIdx );
     if( m_pRedlSaveData )
-    {
         SetSaveData(rDoc, *m_pRedlSaveData);
-
-#if 0
-        if (m_aSttStr && (!m_bFromTableCopy || 0 != m_nNode))
-        {
-            // only now do we have redlines in the document again; fix up the frame
-            SwTextNode *const pStartNode(aIdx.GetNodes()[nSttNode]->GetTextNode());
-            SwTextNode *const pEndNode(aIdx.GetNodes()[nEndNode]->GetTextNode());
-            // FIXME we need to fetch frame of end node????
-            // the MakeCopy already creates frames of intermediate nodes depending on their flag... problem: deletion was with redlines shown, restore with hidden
-            assert(pNode);
-            std::vector<SwTextFrame*> frames;
-            SwIterator<SwTextFrame, SwTextNode, sw::IteratorMode::UnwrapMulti> aIter(*pEndNode);
-            for (SwTextFrame* pFrame = aIter.First(); pFrame; pFrame = aIter.Next())
-            {
-                if (pFrame->getRootFrame()->IsHideRedlines())
-                {
-                    frames.push_back(pFrame);
-                }
-            }
-            for (SwTextFrame * pFrame : frames)
-            {
-// this is not going to work if there are intermediate nodes with frames                pFrame->RegisterToNode(*pStartNode);
-#if 0
-                SwTextNode & rFirstNode(pFrame->GetMergedPara()
-                    ? *pFrame->GetMergedPara()->pFirstNode
-                    : *pStartNode);
-                assert(rFirstNode.GetIndex() <= pNode->GetIndex());
-                pFrame->SetMergedPara(sw::CheckParaRedlineMerge(
-                            *pFrame, rFirstNode, sw::FrameMode::Existing));
-#endif
-            }
-        }
-#endif
-    }
-
-    // create frames after SetSaveData has recreated redlines
-    if (0 != m_nNode)
-    {
-        SwNodeIndex const start(rDoc.GetNodes(), nSttNode + 1);
-        SwNodeIndex const end(rDoc.GetNodes(), nEndNode);
-        ::MakeFrames(&rDoc, start, end);
-    }
-
-    // ... plan: let SplitNode do whatever;
-    // don't create frames on moved nodes;
-    // after SetSaveData, call CheckRedline... on start node,
-    // then MakeFrames
-    // ... what about end node ? will be either properly merged or properly un-merged after handling start node, so just include it in MakeFrames range.
-    //
-    // The interesting case is
-    //  f<delete start>o<redline start>o
-    //  b<redline end>a<redline start>r
-    //  b<redline end>a<delete end>z
 
     AddUndoRedoPaM(rContext, true);
 }
