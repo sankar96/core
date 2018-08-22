@@ -4172,6 +4172,7 @@ static void UnHideRedlines(SwRootFrame & rLayout,
         std::set<sal_uLong> *const pSkipped)
 {
     assert(rEndOfSectionNode.IsEndNode());
+    assert(rNodes[rEndOfSectionNode.StartOfSectionNode()->GetIndex() + 1]->IsCreateFrameWhenHidingRedlines()); // first node is never hidden
     for (sal_uLong i = rEndOfSectionNode.StartOfSectionNode()->GetIndex() + 1;
          i < rEndOfSectionNode.GetIndex(); ++i)
     {
